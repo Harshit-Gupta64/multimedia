@@ -1,0 +1,76 @@
+﻿# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# Pytest / Unit test / Coverage
+.pytest_cache/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Model checkpoints & weights (YOLO, PyTorch)
+*.pt
+*.pth
+*.onnx
+*.engine
+*.tflite
+
+# Large/generated media and benchmark outputs
+visual_test_output.jpg
+reports/demo_output.mp4
+
+# Environment variables & secrets
+.env
+.env.*
+!.env.example
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Operating System artifacts
+.DS_Store
+Thumbs.db
+desktop.ini
+
+sample_media/*.mp4

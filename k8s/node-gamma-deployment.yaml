@@ -1,0 +1,62 @@
+﻿# ── k8s/node-gamma-deployment.yaml ───────────────────────────────────────────
+# Constrained IoT gateway node: 0.5 vCPU / 256 Mi RAM
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: edge-node-gamma
+  namespace: edge-analytics
+  labels:
+    app: edge-node-gamma
+    tier: constrained
+    region: ap-southeast
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: edge-node-gamma
+  template:
+    metadata:
+      labels:
+        app: edge-node-gamma
+        tier: constrained
+        region: ap-southeast
+    spec:
+      containers:
+        - name: edge-analytics
+          image: edge-analytics:0.4.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: NODE_ID
+              value: "edge-node-gamma"
+            - name: NODE_REGION
+              value: "ap-southeast"
+            - name: PYTHONUNBUFFERED
+              value: "1"
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 25
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 20
+            periodSeconds: 15
+          volumeMounts:
+            - name: yolo-cache
+              mountPath: /app/models
+      volumes:
+        - name: yolo-cache
+          persistentVolumeClaim:
+            claimName: yolo-model-pvc

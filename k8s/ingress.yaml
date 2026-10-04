@@ -1,0 +1,72 @@
+﻿# ── k8s/ingress.yaml ──────────────────────────────────────────────────────────
+# Traefik Ingress (K3s default ingress controller) exposing the analytics API.
+# All inbound video streams hit /ingest/* and are proxied to the primary ingestion
+# service (edge-node-alpha by default; upgrade to a LoadBalancer in production).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: edge-analytics-ingress
+  namespace: edge-analytics
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/router.middlewares: "edge-analytics-strip-prefix@kubernetescrd"
+    # Rate limiting: protect against stream floods
+    traefik.ingress.kubernetes.io/router.priority: "10"
+spec:
+  rules:
+    - host: edge-analytics.local        # Override in production with real DNS
+      http:
+        paths:
+          # Primary pipeline ingestion
+          - path: /ingest
+            pathType: Prefix
+            backend:
+              service:
+                name: edge-node-alpha
+                port:
+                  number: 8000
+          # Direct per-node access for testing
+          - path: /alpha
+            pathType: Prefix
+            backend:
+              service:
+                name: edge-node-alpha
+                port:
+                  number: 8000
+          - path: /beta
+            pathType: Prefix
+            backend:
+              service:
+                name: edge-node-beta
+                port:
+                  number: 8000
+          - path: /gamma
+            pathType: Prefix
+            backend:
+              service:
+                name: edge-node-gamma
+                port:
+                  number: 8000
+          # Ops endpoints (health, nodes, stats) on any node
+          - path: /ops
+            pathType: Prefix
+            backend:
+              service:
+                name: edge-node-alpha
+                port:
+                  number: 8000
+---
+# Middleware: strip /ingest prefix before forwarding to service
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: strip-prefix
+  namespace: edge-analytics
+spec:
+  stripPrefix:
+    prefixes:
+      - /ingest
+      - /alpha
+      - /beta
+      - /gamma
+      - /ops

@@ -1,0 +1,62 @@
+﻿# ── k8s/node-beta-deployment.yaml ────────────────────────────────────────────
+# Mid-tier edge node: 1 vCPU / 512 Mi RAM
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: edge-node-beta
+  namespace: edge-analytics
+  labels:
+    app: edge-node-beta
+    tier: medium
+    region: eu-central
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: edge-node-beta
+  template:
+    metadata:
+      labels:
+        app: edge-node-beta
+        tier: medium
+        region: eu-central
+    spec:
+      containers:
+        - name: edge-analytics
+          image: edge-analytics:0.4.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: NODE_ID
+              value: "edge-node-beta"
+            - name: NODE_REGION
+              value: "eu-central"
+            - name: PYTHONUNBUFFERED
+              value: "1"
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 20
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          volumeMounts:
+            - name: yolo-cache
+              mountPath: /app/models
+      volumes:
+        - name: yolo-cache
+          persistentVolumeClaim:
+            claimName: yolo-model-pvc

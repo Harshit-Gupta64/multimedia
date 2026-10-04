@@ -1,0 +1,70 @@
+﻿# ── k8s/node-alpha-deployment.yaml ───────────────────────────────────────────
+# High-capacity edge node: 2 vCPU / 1 Gi RAM
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: edge-node-alpha
+  namespace: edge-analytics
+  labels:
+    app: edge-node-alpha
+    tier: high
+    region: us-west
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: edge-node-alpha
+  template:
+    metadata:
+      labels:
+        app: edge-node-alpha
+        tier: high
+        region: us-west
+    spec:
+      containers:
+        - name: edge-analytics
+          image: edge-analytics:0.4.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+          env:
+            - name: NODE_ID
+              value: "edge-node-alpha"
+            - name: NODE_REGION
+              value: "us-west"
+            - name: NODE_01_ENDPOINT
+              value: "http://edge-node-alpha.edge-analytics.svc.cluster.local:8000"
+            - name: NODE_02_ENDPOINT
+              value: "http://edge-node-beta.edge-analytics.svc.cluster.local:8000"
+            - name: NODE_03_ENDPOINT
+              value: "http://edge-node-gamma.edge-analytics.svc.cluster.local:8000"
+            - name: PYTHONUNBUFFERED
+              value: "1"
+          resources:
+            requests:
+              cpu: "1000m"
+              memory: "512Mi"
+            limits:
+              cpu: "2000m"
+              memory: "1Gi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          volumeMounts:
+            - name: yolo-cache
+              mountPath: /app/models
+      volumes:
+        - name: yolo-cache
+          persistentVolumeClaim:
+            claimName: yolo-model-pvc

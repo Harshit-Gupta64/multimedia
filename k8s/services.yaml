@@ -1,0 +1,71 @@
+﻿# ── k8s/services.yaml ─────────────────────────────────────────────────────────
+# ClusterIP services exposing each edge node inside the K3s cluster.
+# External traffic reaches nodes via the Ingress (k8s/ingress.yaml).
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: edge-node-alpha
+  namespace: edge-analytics
+  labels:
+    app: edge-node-alpha
+    tier: high
+spec:
+  type: ClusterIP
+  selector:
+    app: edge-node-alpha
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: edge-node-beta
+  namespace: edge-analytics
+  labels:
+    app: edge-node-beta
+    tier: medium
+spec:
+  type: ClusterIP
+  selector:
+    app: edge-node-beta
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: edge-node-gamma
+  namespace: edge-analytics
+  labels:
+    app: edge-node-gamma
+    tier: constrained
+spec:
+  type: ClusterIP
+  selector:
+    app: edge-node-gamma
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+---
+# PVC for shared YOLOv8 model weights
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: yolo-model-pvc
+  namespace: edge-analytics
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 500Mi
+  storageClassName: local-path    # K3s default StorageClass

@@ -1,0 +1,105 @@
+﻿version: "3.9"
+
+# ── Shared service template ────────────────────────────────────────────────────
+x-edge-service: &edge-defaults
+  build:
+    context: .
+    dockerfile: Dockerfile
+    target: runtime
+  restart: unless-stopped
+  networks:
+    - edge-net
+  volumes:
+    - yolo-cache:/app/models        # shared model weights volume
+  environment:
+    - PYTHONUNBUFFERED=1
+  healthcheck:
+    test: ["CMD", "python", "-c",
+           "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+    interval: 30s
+    timeout: 5s
+    retries: 3
+    start_period: 15s
+
+
+# ── Services ──────────────────────────────────────────────────────────────────
+services:
+
+  # High-capacity edge node (4 vCPUs, 1.5 GB RAM) – simulates a beefy node
+  edge-node-alpha:
+    <<: *edge-defaults
+    container_name: edge-node-alpha
+    ports:
+      - "8001:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - NODE_ID=edge-node-alpha
+      - NODE_REGION=us-west
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: "1536M"
+        reservations:
+          cpus: "2.0"
+          memory: "768M"
+    labels:
+      - "edge.tier=high"
+      - "edge.region=us-west"
+
+  # Mid-tier edge node (2 vCPUs, 1 GB RAM) – simulates a medium node
+  edge-node-beta:
+    <<: *edge-defaults
+    container_name: edge-node-beta
+    ports:
+      - "8002:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - NODE_ID=edge-node-beta
+      - NODE_REGION=eu-central
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: "1024M"
+        reservations:
+          cpus: "1.0"
+          memory: "512M"
+    labels:
+      - "edge.tier=medium"
+      - "edge.region=eu-central"
+
+  # Constrained edge node (1 vCPU, 512 MB RAM) – simulates an IoT gateway
+  edge-node-gamma:
+    <<: *edge-defaults
+    container_name: edge-node-gamma
+    ports:
+      - "8003:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - NODE_ID=edge-node-gamma
+      - NODE_REGION=ap-southeast
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: "512M"
+        reservations:
+          cpus: "0.5"
+          memory: "256M"
+    labels:
+      - "edge.tier=constrained"
+      - "edge.region=ap-southeast"
+
+
+# ── Network & Volumes ──────────────────────────────────────────────────────────
+networks:
+  edge-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+volumes:
+  yolo-cache:
+    driver: local
